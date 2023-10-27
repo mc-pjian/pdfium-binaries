@@ -4,7 +4,6 @@ OS=${PDFium_TARGET_OS:?}
 CPU="${PDFium_TARGET_CPU:?}"
 TARGET_LIBC="${PDFium_TARGET_LIBC:-default}"
 SOURCE_DIR="$PWD/example"
-ANDROID_TOOLCHAIN="${PDFium_SOURCE_DIR:?}/third_party/android_ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/"
 CMAKE_ARGS=()
 CAN_RUN_ON_HOST=false
 
@@ -14,7 +13,7 @@ case "$OS" in
   android)
     case "$CPU" in
       arm)
-        PREFIX="armv7a-linux-androideabi16-"
+        PREFIX="armv7a-linux-androideabi19-"
         ;;
       arm64)
         PREFIX="aarch64-linux-android21-"
@@ -23,10 +22,9 @@ case "$OS" in
         PREFIX="x86_64-linux-android21-"
         ;;
       x86)
-        PREFIX="i686-linux-android16-"
+        PREFIX="i686-linux-android19-"
         ;;
     esac
-    export PATH="$ANDROID_TOOLCHAIN:$PATH"
     CMAKE_ARGS+=(
       -D CMAKE_C_COMPILER="${PREFIX:-}clang"
       -D CMAKE_CXX_COMPILER="${PREFIX:-}clang++"
@@ -58,12 +56,20 @@ case "$OS" in
   linux)
     case "$CPU" in
       arm)
-        PREFIX="arm-linux-gnueabihf-"
-        SUFFIX="-9"
+        if [ "$TARGET_LIBC" == "musl" ]; then
+          PREFIX="arm-linux-musleabihf-"
+        else
+          PREFIX="arm-linux-gnueabihf-"
+          SUFFIX="-10"
+        fi
         ;;
       arm64)
-        PREFIX="aarch64-linux-gnu-"
-        SUFFIX="-9"
+        if [ "$TARGET_LIBC" == "musl" ]; then
+          PREFIX="aarch64-linux-musl-"
+        else
+          PREFIX="aarch64-linux-gnu-"
+          SUFFIX="-10"
+        fi
         ;;
       x86)
         if [ "$TARGET_LIBC" == "musl" ]; then
@@ -120,7 +126,7 @@ case "$OS" in
         ;;
     esac
     CMAKE_ARGS+=(
-      -G "Visual Studio 16 2019"
+      -G "Visual Studio 17 2022"
       -A "$ARCH"
     )
     ;;
@@ -140,17 +146,15 @@ cmake "${CMAKE_ARGS[@]}"
 cmake --build .
 
 if [ "$OS" == "win" ]; then
-  file Debug/example.exe
+  EXAMPLE="Debug/example.exe"
 else
-  file example
+  EXAMPLE="./example"
 fi
 
+file $EXAMPLE
+
 if [ $CAN_RUN_ON_HOST == "true" ]; then
-  if [ "$OS" == "win" ]; then
-    Debug/example.exe
-  else
-    ./example
-  fi
+  $EXAMPLE "${PDFium_SOURCE_DIR}/testing/resources/hello_world.pdf" hello_world.ppm
 fi
 
 popd

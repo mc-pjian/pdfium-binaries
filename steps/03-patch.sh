@@ -14,13 +14,11 @@ git apply -v "$PATCHES/public_headers.patch"
 
 case "$OS" in
   android)
-    git apply -v "$PATCHES/android/pdfium.patch"
+    git -C build apply -v "$PATCHES/android/build.patch"
     ;;
 
   ios)
     git apply -v "$PATCHES/ios/pdfium.patch"
-    git -C build apply -v "$PATCHES/ios/build.patch"
-    git -C third_party/libjpeg_turbo apply -v "$PATCHES/ios/libjpeg_turbo.patch"
     ;;
 
   wasm)
@@ -46,7 +44,6 @@ esac
 
 case "$TARGET_LIBC" in
   musl)
-    git apply -v "$PATCHES/musl/pdfium.patch"
     git -C build apply -v "$PATCHES/musl/build.patch"
     mkdir -p "build/toolchain/linux/musl"
     cp "$PATCHES/musl/toolchain.gn" "build/toolchain/linux/musl/BUILD.gn"
